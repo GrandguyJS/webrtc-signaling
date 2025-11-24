@@ -1,60 +1,56 @@
 <!DOCTYPE html>
 <html>
-    <body>
-        <video id="remoteVideo" autoplay playsinline></video>
+<head>
+  <meta charset="utf-8">
+  <title>WebRTC B</title>
+</head>
+<body>
+  <h1>Client B</h1>
+  <video id="remote" autoplay playsinline></video>
 
-        <script>
-            const ws = new WebSocket("ws://192.168.178.24:8765");
-            const pc = new RTCPeerConnection({
-                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-            });
+  <script>
+    const id = "B";
+    const target = "A";
+    const ws = new WebSocket("ws://localhost:8765");
+    const pc = new RTCPeerConnection();
 
-            ws.onopen = () => {
-                ws.send(JSON.stringify({ id: "B" }));
-            };
+    const remoteVideo = document.getElementById("remote");
 
-            function send(msg) {
-                msg.from = "B";
-                msg.to = "A";
-                ws.send(JSON.stringify(msg));
-            }
+    ws.onopen = () => {
+      ws.send(JSON.stringify({id}));
+    };
 
-            pc.onicecandidate = e => {
-                if (e.candidate) send({ candidate: e.candidate });
-            };
+    ws.onmessage = async (event) => {
+      const data = JSON.parse(event.data);
 
-            pc.ontrack = e => {
-                document.getElementById("remoteVideo").srcObject = e.streams[0];
-            };
+      if (data.sdp) {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        if (data.sdp.type === "offer") {
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          ws.send(JSON.stringify({to: target, sdp: pc.localDescription}));
+        }
+      } else if (data.ice) {
+        try { await pc.addIceCandidate(data.ice); } catch(e) {}
+      }
+    };
 
-            let pendingCandidates = [];
+    pc.onicecandidate = (e) => {
+      if (e.candidate) ws.send(JSON.stringify({to: target, ice: e.candidate}));
+    };
 
-            ws.onmessage = async event => {
-                const msg = JSON.parse(event.data);
+    pc.ontrack = (e) => {
+      remoteVideo.srcObject = e.streams[0];
+    };
 
-                if (msg.type === "offer") {
-                    if (!pc.currentRemoteDescription) {
-                        await pc.setRemoteDescription(msg.sdp);
-
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        stream.getTracks().forEach(t => pc.addTrack(t, stream));
-
-                        const answer = await pc.createAnswer();
-                        await pc.setLocalDescription(answer);
-                        send({ type: "answer", sdp: pc.localDescription });
-
-                        pendingCandidates.forEach(c => pc.addIceCandidate(c));
-                        pendingCandidates = [];
-                    }
-                }
-
-                if (msg.candidate) {
-                    if (!pc.remoteDescription) {
-                        return pendingCandidates.push(msg.candidate);
-                    }
-                    await pc.addIceCandidate(msg.candidate);
-                }
-            };
-        </script>
-    </body>
+    navigator.mediaDevices.getUserMedia({video:true, audio:true})
+      .then(stream => {
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.enabled = false; // Mute the video
+        }
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      });
+  </script>
+</body>
 </html>

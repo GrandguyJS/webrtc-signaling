@@ -3,7 +3,6 @@ import websockets
 import json
 
 clients = {}   # id → websocket
-pair = {}      # id → other id
 
 async def handler(ws):
     # first message must set the client ID ("A" or "B")
@@ -15,8 +14,9 @@ async def handler(ws):
     try:
         async for msg in ws:
             data = json.loads(msg)
+            print(data)
             target = data.get("to")
-            if "to" in data and target in clients:
+            if target in clients:
                 await clients[target].send(msg)
     except:
         pass
