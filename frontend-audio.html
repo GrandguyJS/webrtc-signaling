@@ -11,8 +11,12 @@
   <script>
     const id = "B";
     const target = "A";
-    const ws = new WebSocket("ws://localhost:8765");
-    const pc = new RTCPeerConnection();
+    const ws = new WebSocket("ws://192.168.178.35:8765");
+    const pc = new RTCPeerConnection({
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' }, // Google's public STUN server
+        ]
+    });
 
     const remoteVideo = document.getElementById("remote");
 
