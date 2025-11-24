@@ -7,11 +7,24 @@
 <body>
   <h1>Client A</h1>
   <video id="remote" autoplay playsinline></video>
-
+  <div style="display: div; flex-direction: column;">
+    <label>
+        <input type="checkbox" id="toggleVideo" checked>
+        Video on
+    </label>
+    <br>
+    <label>
+        <input type="checkbox" id="toggleAudio">
+        Audio on
+    </label>
+    <br>
+    <input type="file" id="audioFile" accept="audio/mp3,audio/mpeg">
+  </div>
   <script>
     const id = "A";
     const target = "B";
-    const ws = new WebSocket("ws://192.168.178.35:8765");
+
+    const ws = new WebSocket("ws://192.168.178.24:8765");
     const pc = new RTCPeerConnection({
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' }, // Google's public STUN server
@@ -19,6 +32,7 @@
     });
 
     const remoteVideo = document.getElementById("remote");
+    let localStream;
 
     ws.onopen = () => {
       ws.send(JSON.stringify({id}));
@@ -26,8 +40,21 @@
 
     ws.onmessage = async (event) => {
       const data = JSON.parse(event.data);
+      if (data.type === "ready") {
+        setTimeout(async () => { 
+            const offer = await pc.createOffer(); 
+            await pc.setLocalDescription(offer); 
+            ws.send(JSON.stringify({to: target, sdp: pc.localDescription})); 
+        }, 2000);
+      } else if (data.type === "audio") {
+        const bytes = Uint8Array.from(atob(data.data), c => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: "audio/mpeg" });
+        const url = URL.createObjectURL(blob);
 
-      if (data.sdp) {
+        const audio = new Audio(url);
+        audio.play();
+        return;
+      } else if (data.sdp) {
         await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
         if (data.sdp.type === "offer") {
           const answer = await pc.createAnswer();
@@ -49,19 +76,47 @@
 
     navigator.mediaDevices.getUserMedia({video:true, audio:true})
       .then(stream => {
-        const audioTrack = stream.getAudioTracks()[0];
-        if (audioTrack) {
-          audioTrack.enabled = false; // Mute the audio
-        }
+        localStream = stream;
         stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+        const videoTrack = localStream.getVideoTracks()[0];
+        const audioTrack = localStream.getAudioTracks()[0];
+
+        if (videoTrack) {
+        videoTrack.enabled = document.getElementById("toggleVideo").checked;
+        }
+        if (audioTrack) {
+        audioTrack.enabled = document.getElementById("toggleAudio").checked;
+        }
       });
 
-    // initiate call after 2s to ensure B is ready
-    setTimeout(async () => {
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      ws.send(JSON.stringify({to: target, sdp: pc.localDescription}));
-    }, 2000);
+    // Mute / Cut video
+
+    document.getElementById("toggleVideo").addEventListener("change", (e) => {
+      const t = localStream?.getVideoTracks()[0];
+      if (t) t.enabled = e.target.checked;
+    });
+
+    document.getElementById("toggleAudio").addEventListener("change", (e) => {
+      const t = localStream?.getAudioTracks()[0];
+      if (t) t.enabled = e.target.checked;
+    });
+
+    // mp3 file
+    document.getElementById("audioFile").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
+      ws.send(JSON.stringify({
+        to: target,
+        type: "audio",
+        name: file.name,
+        data: base64
+      }));
+    });
   </script>
 </body>
 </html>

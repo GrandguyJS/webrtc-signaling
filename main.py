@@ -10,6 +10,8 @@ async def handler(ws):
     cid = init["id"]
     clients[cid] = ws
     print(f"{cid} connected")
+    if "A" in clients and "B" in clients:
+        await clients["A"].send(json.dumps({"type": "ready"}))
 
     try:
         async for msg in ws:
