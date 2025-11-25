@@ -10,9 +10,8 @@ import pyaudio
 import numpy as np
 
 
-WS_URL = "ws://192.168.188.21:8765"
+WS_URL = "ws://localhost:8765"
 ws_connection = None
-audio_buffer = bytearray()
 
 # =====================================================================
 #  Audio player
@@ -40,15 +39,16 @@ class WebRTCClient:
         self.name = name
         self.pc = None
         self.player = None
+        self.pending_ice = []
         self.audio_player = AudioPlayer()
 
     # ---------------------------------------------------------
     # Create NEW PeerConnection (fixes "RTCPeerConnection is closed")
     # ---------------------------------------------------------
-    def create_pc(self):
+    async def create_pc(self):
         if self.pc:
             try:
-                asyncio.create_task(self.pc.close())
+                await self.pc.close()
             except:
                 pass
 
@@ -114,7 +114,7 @@ class WebRTCClient:
     async def start_webrtc(self):
         print(f"[{self.name}] Starting WebRTC...")
 
-        self.create_pc()
+        await self.create_pc()
         self.add_media_tracks()
 
         offer = await self.pc.createOffer()
@@ -147,6 +147,11 @@ class WebRTCClient:
                 type=data["sdp"]["type"],
             )
             await self.pc.setRemoteDescription(desc)
+
+            for cand in self.pending_ice:
+                await self.pc.addIceCandidate(cand)
+            self.pending_ice.clear()
+
             print(f"[{self.name}] Remote SDP applied.")
             return
 
@@ -160,7 +165,11 @@ class WebRTCClient:
             cand.sdpMid = ice.get("sdpMid")
             cand.sdpMLineIndex = ice.get("sdpMLineIndex")
 
-            await self.pc.addIceCandidate(cand)
+            if not self.pc.remoteDescription:
+                self.pending_ice.append(cand)
+            else:
+                await self.pc.addIceCandidate(cand)
+
             print("Remote ICE added.")
             return
 
@@ -176,11 +185,11 @@ async def send(data: dict):
 
 async def connect():
     global ws_connection
-    client = WebRTCClient("A")    # <-- create WebRTC handler
 
     while True:
         try:
             print(f"Connecting to {WS_URL}...")
+            client = WebRTCClient("A")
             async with websockets.connect(WS_URL) as ws:
                 ws_connection = ws
                 print("Connected to signaling server.")

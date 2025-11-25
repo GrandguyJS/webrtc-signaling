@@ -23,30 +23,45 @@
   <script>
     const id = "A";
     const target = "B";
-
-    const ws = new WebSocket("ws://localhost:8765");
+    
     const pc = new RTCPeerConnection({
-        iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' }, // Google's public STUN server
-            { urls: "turn:global.replay.metered.ca:80", username: "openai", credential: "openai" }
-        ]
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' }, // Google's public STUN server
+        { urls: "turn:global.replay.metered.ca:80", username: "openai", credential: "openai" }
+      ]
     });
-
+    
     const remoteVideo = document.getElementById("remote");
+
     let localStream;
+    let ws;
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({id}));
-    };
+    async function init() {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
-    ws.onmessage = async (event) => {
+      localStream.getVideoTracks()[0].enabled = document.getElementById("toggleVideo").checked;
+      localStream.getAudioTracks()[0].enabled = document.getElementById("toggleAudio").checked;
+
+      startWebsocket();
+    }
+
+    function startWebsocket() {
+      ws = new WebSocket("ws://localhost:8765");
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ id }));
+      };
+
+      ws.onmessage = handleMessage;
+    }
+
+    async function handleMessage(event) {
       const data = JSON.parse(event.data);
       if (data.type === "ready") {
-        setTimeout(async () => { 
-            const offer = await pc.createOffer(); 
-            await pc.setLocalDescription(offer); 
-            ws.send(JSON.stringify({to: target, sdp: pc.localDescription})); 
-        }, 2000);
+        const offer = await pc.createOffer(); 
+        await pc.setLocalDescription(offer); 
+        ws.send(JSON.stringify({to: target, sdp: pc.localDescription})); 
       } else if (data.type === "audio") {
         const bytes = Uint8Array.from(atob(data.data), c => c.charCodeAt(0));
         const blob = new Blob([bytes], { type: "audio/mpeg" });
@@ -67,6 +82,8 @@
       }
     };
 
+    init();
+
     pc.onicecandidate = (e) => {
       if (e.candidate) ws.send(JSON.stringify({to: target, ice: e.candidate}));
     };
@@ -75,24 +92,7 @@
       remoteVideo.srcObject = e.streams[0];
     };
 
-    navigator.mediaDevices.getUserMedia({video:true, audio:true})
-      .then(stream => {
-        localStream = stream;
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-        const videoTrack = localStream.getVideoTracks()[0];
-        const audioTrack = localStream.getAudioTracks()[0];
-
-        if (videoTrack) {
-        videoTrack.enabled = document.getElementById("toggleVideo").checked;
-        }
-        if (audioTrack) {
-        audioTrack.enabled = document.getElementById("toggleAudio").checked;
-        }
-      });
-
     // Mute / Cut video
-
     document.getElementById("toggleVideo").addEventListener("change", (e) => {
       const t = localStream?.getVideoTracks()[0];
       if (t) t.enabled = e.target.checked;
