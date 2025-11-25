@@ -24,8 +24,7 @@
     const id = "A";
     const target = "B";
 
-    import { WS_URL } from "./config.js";
-    const ws = new WebSocket(WS_URL);
+    const ws = new WebSocket("ws://localhost:8765");
     const pc = new RTCPeerConnection({
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' }, // Google's public STUN server

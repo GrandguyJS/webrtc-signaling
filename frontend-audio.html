@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>Client B</h1>
-  <video id="remote" autoplay playsinline></video>
+  <video id="remote" autoplay playsinline webkit-playsinline></video>
   <div style="display: div; flex-direction: column;">
       <label>
         <input type="checkbox" id="toggleVideo">
@@ -24,8 +24,7 @@
     const id = "B";
     const target = "A";
 
-    import { WS_URL } from "./config.js";
-    const ws = new WebSocket(WS_URL);
+    const ws = new WebSocket("ws://192.168.188.21:8765");
     const pc = new RTCPeerConnection({
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' }, // Google's public STUN server
@@ -85,10 +84,10 @@
         const audioTrack = localStream.getAudioTracks()[0];
 
         if (videoTrack) {
-        videoTrack.enabled = document.getElementById("toggleVideo").checked;
+          videoTrack.enabled = document.getElementById("toggleVideo").checked;
         }
         if (audioTrack) {
-        audioTrack.enabled = document.getElementById("toggleAudio").checked;
+          audioTrack.enabled = document.getElementById("toggleAudio").checked;
         }
       });
 
