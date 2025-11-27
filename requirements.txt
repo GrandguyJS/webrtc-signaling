@@ -1,0 +1,4 @@
+Flask==3.1.2
+livekit_api==1.0.7
+livekit_protocol==1.1.0
+python-dotenv==1.2.1
