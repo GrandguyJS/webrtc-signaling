@@ -11,12 +11,12 @@ app = Flask(__name__)
 @app.route('/token')
 def getToken():
     pwd = request.args.get("pwd")
+    identity = request.args.get("identity")
     if pwd != os.getenv("PASSWORD"):
         return jsonify({"error": "unauthorized"}), 401
     
     token = api.AccessToken(os.getenv('LIVEKIT_API_KEY'), os.getenv('LIVEKIT_API_SECRET')) \
-        .with_identity("identity") \
-        .with_name("my name") \
+        .with_identity(identity) \
         .with_grants(api.VideoGrants(
             room_join=True,
             room="room1",
