@@ -15,17 +15,18 @@
   <br>
   <script>
     async function getToken() {
+      const saved = localStorage.getItem("lk_token");
+      if (saved) return saved;
+
       const pwd = prompt("Enter password:");
 
-      // 2) Fetch token securely
-      const res = await fetch(`/token?pwd=${encodeURIComponent(pwd)}&identity=usera`);
+      const res = await fetch(`http://live-chat.duckdns.org/token?pwd=${encodeURIComponent(pwd)}&identity=userb`);
       const data = await res.json();
-
       if (data.error) {
         alert("Wrong password!");
         return;
       }
-
+      localStorage.setItem("lk_token", data.token);
       return data.token;
     }
     (async () => {
@@ -51,7 +52,11 @@
       document.getElementById("toggleAudio").addEventListener("change", async (e) => {
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
       });
-    })().catch(console.error);
+    })().catch((err) => {
+        localStorage.removeItem("lk_token");
+        console.error(err);
+      }
+    );
   </script>
 </body>
 </html>
