@@ -8,7 +8,7 @@ load_dotenv("secret.env")
 
 app = Flask(__name__)
 
-@app.route('/getToken')
+@app.route('/token')
 def getToken():
     pwd = request.args.get("pwd")
     if pwd != os.getenv("PASSWORD"):
