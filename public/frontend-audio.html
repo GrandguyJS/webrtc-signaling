@@ -15,7 +15,7 @@
   <br>
   <script>
     async function getToken() {
-      const saved = localStorage.getItem("lk_token");
+      const saved = localStorage.getItem("lk_token_b");
       if (saved) return saved;
 
       const pwd = prompt("Enter password:");
@@ -26,7 +26,7 @@
         alert("Wrong password!");
         return;
       }
-      localStorage.setItem("lk_token", data.token);
+      localStorage.setItem("lk_token_b", data.token);
       return data.token;
     }
     (async () => {
@@ -53,7 +53,7 @@
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
       });
     })().catch((err) => {
-        localStorage.removeItem("lk_token");
+        localStorage.removeItem("lk_token_b");
         console.error(err);
       }
     );
