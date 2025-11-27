@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>LiveKit Chat – User A</title>
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+</head>
+<body>
+  <h2>LiveKit – User A</h2>
+  <div id="remote-container"></div>
+  <br>
+  <label><input type="checkbox" id="toggleVideo" checked> Video</label>
+  <br>
+  <label><input type="checkbox" id="toggleAudio" checked> Audio</label>
+  <br>
+  <script>
+    async function getToken() {
+      const pwd = prompt("Enter password:");
+
+      // 2) Fetch token securely
+      const res = await fetch(`/getToken?&pwd=${encodeURIComponent(pwd)}`);
+      const data = await res.json();
+
+      if (data.error) {
+        alert("Wrong password!");
+        return;
+      }
+
+      return data.token;
+    }
+    (async () => {
+      const url = "wss://live-chat.duckdns.org";  // same server
+      const token = await getToken();
+      
+      const room = new LivekitClient.Room();
+
+      room.on(LivekitClient.RoomEvent.TrackSubscribed, (track) => {
+        const el = track.attach();
+        document.getElementById("remote-container").appendChild(el);
+      });
+
+      await room.connect(url, token);
+
+      // publish cam+mic
+      await room.localParticipant.enableCameraAndMicrophone();
+
+      document.getElementById("toggleVideo").addEventListener("change", async (e) => {
+        room.localParticipant.setCameraEnabled(e.target.checked);
+      });
+
+      document.getElementById("toggleAudio").addEventListener("change", async (e) => {
+        room.localParticipant.setMicrophoneEnabled(e.target.checked);
+      });
+    })().catch(console.error);
+  </script>
+</body>
+</html>
