@@ -20,7 +20,7 @@
 
       const pwd = prompt("Enter password:");
 
-      const res = await fetch(`http://live-chat.duckdns.org/token?pwd=${encodeURIComponent(pwd)}&identity=userb`);
+      const res = await fetch(`https://live-chat.duckdns.org/token?pwd=${encodeURIComponent(pwd)}&identity=userb`);
       const data = await res.json();
       if (data.error) {
         alert("Wrong password!");
