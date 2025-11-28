@@ -53,8 +53,9 @@
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
       });
     })().catch((err) => {
-        localStorage.removeItem("lk_token_a");
         console.error(err);
+        localStorage.removeItem("lk_token_a");
+        location.reload();
       }
     );
   </script>
