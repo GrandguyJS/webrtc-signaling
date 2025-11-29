@@ -16,7 +16,7 @@ IDENTITY = "usera"
 CAMERA = 0
 
 ENABLE_CAMERA = True
-ENABLE_MIC = True
+ENABLE_MIC = False
 
 def get_token():
     params = {
@@ -86,7 +86,7 @@ async def main():
 
     video_track = None
     if ENABLE_CAMERA:
-        cap = cv2.VideoCapture(2)
+        cap = cv2.VideoCapture(CAMERA)
         if not cap.isOpened():
             print("Cannot open camera")
             return
