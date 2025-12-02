@@ -4,10 +4,8 @@ load_dotenv("secret.env")
 
 import requests
 import asyncio
-import cv2
 from livekit import rtc
 import sounddevice as sd
-import time
 
 import gi
 gi.require_version("Gst", "1.0")
