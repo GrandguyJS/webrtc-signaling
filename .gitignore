@@ -1,2 +1,4 @@
 /venv
 secret.env
+go.mod
+go.sum
