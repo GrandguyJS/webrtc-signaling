@@ -17,9 +17,6 @@ TOKEN_URL = "https://live-chat.duckdns.org/token"
 PASSWORD = os.getenv("PASSWORD")
 IDENTITY = "usera"
 
-CAMERA = 0
-ENABLE_CAMERA = True
-
 TCP_HOST = "0.0.0.0"
 TCP_PORT = 16400
 
@@ -37,61 +34,6 @@ def get_token():
     if "error" in data:
         raise Exception("Wrong password or server rejected authentication")
     return data["token"]
-
-
-# ---------------------------------------------------------
-# 1. Start GStreamer pipeline
-# ---------------------------------------------------------
-def start_gstreamer():
-    if not ENABLE_CAMERA:
-        print("Camera disabled; not starting GStreamer.")
-        return None
-
-    cmd = [
-        "gst-launch-1.0",
-        "avfvideosrc",
-        "!",
-        "video/x-raw,width=1280,height=720,framerate=25/1,format=NV12",
-        "!",
-        "x264enc",
-        "tune=zerolatency",
-        "bitrate=1500",
-        "speed-preset=ultrafast",
-        "key-int-max=25",
-        "byte-stream=true",
-        "threads=1",
-        "aud=true",
-        "!",
-        "video/x-h264,stream-format=byte-stream,alignment=au,profile=baseline",
-        "!",
-        f"tcpserversink", f"host={TCP_HOST}", f"port={TCP_PORT}"
-    ]
-
-    print("Starting GStreamer pipeline...")
-    return subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-
-# ---------------------------------------------------------
-# Start lk room join process
-# ---------------------------------------------------------
-def start_lk_cli():
-    uri = f"h264://localhost:16400"
-
-    cmd = [
-        "lk", "room", "join",
-        "--url", "wss://live-chat.duckdns.org",
-        "--api-key", os.getenv("LIVEKIT_API_KEY"),
-        "--api-secret", os.getenv("LIVEKIT_API_SECRET"),
-        "--identity", "usercli",
-        "--publish", uri,
-        "room1"
-    ]
-
-    # Launch as background process (not blocking)
-    return subprocess.Popen(cmd)
 
 # ---------------------------------------------------------
 # 2. Audio Handler
@@ -159,12 +101,6 @@ async def main():
         audio_handler.stop()
 
     await room.connect(SERVER_URL, token)
-
-    # video
-    if ENABLE_CAMERA:
-        start_gstreamer()
-        await asyncio.sleep(10)
-        start_lk_cli()
     
     try:
         while True:
