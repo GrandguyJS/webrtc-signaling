@@ -21,7 +21,6 @@ def getToken():
             room_join=True,
             room="room1",
         ))
-    print(token.to_jwt())
     return jsonify({"token": token.to_jwt()})
 
 @app.route("/video")
