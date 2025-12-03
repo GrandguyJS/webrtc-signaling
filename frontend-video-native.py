@@ -74,6 +74,24 @@ def start_gstreamer():
         stderr=subprocess.PIPE,
     )
 
+# ---------------------------------------------------------
+# Start lk room join process
+# ---------------------------------------------------------
+def start_lk_cli():
+    uri = f"h264://localhost:16400"
+
+    cmd = [
+        "lk", "room", "join",
+        "--url", "wss://live-chat.duckdns.org",
+        "--api-key", os.getenv("LIVEKIT_API_KEY"),
+        "--api-secret", os.getenv("LIVEKIT_API_SECRET"),
+        "--identity", "usercli",
+        "--publish", uri,
+        "room1"
+    ]
+
+    # Launch as background process (not blocking)
+    return subprocess.Popen(cmd)
 
 # ---------------------------------------------------------
 # 2. Audio Handler
@@ -145,6 +163,8 @@ async def main():
     # video
     if ENABLE_CAMERA:
         start_gstreamer()
+        await asyncio.sleep(10)
+        start_lk_cli()
     
     try:
         while True:
