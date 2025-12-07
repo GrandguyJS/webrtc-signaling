@@ -7,15 +7,13 @@ import asyncio
 from livekit import rtc
 import sounddevice as sd
 
-
-
 SERVER_URL = "wss://live-chat.duckdns.org"
 TOKEN_URL = "https://live-chat.duckdns.org/token"
 PASSWORD = os.getenv("PASSWORD")
 IDENTITY = "usera"
 CAMERA = 0
 
-ENABLE_CAMERA = True
+ENABLE_CAMERA = False
 
 if ENABLE_CAMERA:
     import gi
@@ -41,9 +39,9 @@ class RemoteAudioHandler:
         self.stream = None
         self.out = None
         self.task = None
+        self.buffer = None
 
     def start(self, track):
-        # destroy old ones if they exist
         self.stop()
 
         self.stream = rtc.AudioStream.from_track(
@@ -53,16 +51,27 @@ class RemoteAudioHandler:
             loop=self.loop
         )
 
+        # Larger blocksize prevents underruns
         self.out = sd.OutputStream(
             samplerate=48000,
             channels=1,
-            dtype="int16"
+            dtype="int16",
+            blocksize=960,      # 20ms
+            latency='low'
         )
         self.out.start()
 
+        from collections import deque
+        self.buffer = deque(maxlen=5)  # 100ms buffer
+
         async def reader():
             async for event in self.stream:
-                self.out.write(event.frame.data)
+                self.buffer.append(event.frame.data)
+                if len(self.buffer) >= 2:
+                    try:
+                        self.out.write(self.buffer.popleft())
+                    except sd.PortAudioError:
+                        pass
 
         self.task = asyncio.create_task(reader())
 
@@ -75,6 +84,7 @@ class RemoteAudioHandler:
             self.out.close()
             self.out = None
         self.stream = None
+
 
 async def publish_video(room: rtc.Room, cam_index=0, width=1280, height=720, fps=30):
     # Create encoded video track from GStreamer
