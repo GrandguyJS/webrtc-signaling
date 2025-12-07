@@ -7,11 +7,7 @@ import asyncio
 from livekit import rtc
 import sounddevice as sd
 
-import gi
-gi.require_version("Gst", "1.0")
-from gi.repository import Gst
 
-Gst.init(None)
 
 SERVER_URL = "wss://live-chat.duckdns.org"
 TOKEN_URL = "https://live-chat.duckdns.org/token"
@@ -20,6 +16,13 @@ IDENTITY = "usera"
 CAMERA = 0
 
 ENABLE_CAMERA = True
+
+if ENABLE_CAMERA:
+    import gi
+    gi.require_version("Gst", "1.0")
+    from gi.repository import Gst
+
+    Gst.init(None)
 
 def get_token():
     params = {
