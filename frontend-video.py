@@ -176,6 +176,8 @@ async def main():
     def on_track_unsubscribed(track, pub, participant):
         audio_handler.stop()
 
+    await room.connect(SERVER_URL, get_token())
+
     @room.local_participant.register_rpc_method("image")
     async def rpc_image(_):
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
@@ -207,8 +209,6 @@ async def main():
         finally:
             if os.path.exists(img_path):
                 os.unlink(img_path)
-
-    await room.connect(SERVER_URL, get_token())
 
     # video
     if ENABLE_CAMERA:
