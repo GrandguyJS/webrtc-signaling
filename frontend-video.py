@@ -5,11 +5,12 @@ load_dotenv("secret.env")
 import requests
 import asyncio
 from livekit import rtc
+from livekit.rtc.rpc import RpcInvocationData
 import sounddevice as sd
 
 import base64
-import tempfile
 import subprocess
+import json
 
 SERVER_URL = "wss://live-chat.duckdns.org"
 TOKEN_URL = "https://live-chat.duckdns.org/token"
@@ -179,8 +180,8 @@ async def main():
     await room.connect(SERVER_URL, get_token())
 
     @room.local_participant.register_rpc_method("image")
-    async def rpc_image(_):
-        img_path = os.path.expanduser("~/Desktop/image.jpg")
+    async def rpc_image(data: RpcInvocationData):
+        img_path = "image.jpg"
 
         try:
             proc = subprocess.run(
@@ -195,21 +196,25 @@ async def main():
             )
 
             if proc.returncode != 0:
-                return {
-                    "error": "rpicam_failed",
-                    "stderr": proc.stderr.decode(errors="ignore")
-                }
+                return json.dumps({
+                    "ok": False,
+                    "error": proc.stderr.decode(errors="ignore"),
+                })
 
             with open(img_path, "rb") as f:
                 img_b64 = base64.b64encode(f.read()).decode("ascii")
 
-            return {
+            return json.dumps({
+                "ok": True,
                 "format": "jpeg",
                 "image_base64": img_b64,
-            }
+            })
 
         except Exception as e:
-            return {"error": str(e)}
+            return json.dumps({
+                "ok": False,
+                "error": str(e),
+            })
 
     # video
     if ENABLE_CAMERA:
