@@ -58,15 +58,25 @@
       });
 
       document.getElementById("snap").onclick = async () => {
-        const res = await room.localParticipant.performRpc({
-          destinationIdentity: "usera",
+        await room.localParticipant.performRpc({
+          destinationIdentity: "YOUR_PI_IDENTITY",
           method: "image",
-          payload: {}
+          payload: {},
         });
+      };
+
+      room.registerByteStreamHandler("image", async (reader, participantInfo) => {
+        const info = reader.info;
+
+        const chunks = await reader.readAll();
+        const blob = new Blob(chunks, { type: info.mimeType || "image/jpeg" });
+        const url = URL.createObjectURL(blob);
 
         const img = document.getElementById("img");
-        img.src = `data:image/jpeg;base64,${res.image_base64}`;
-      };
+        img.src = url;
+
+        console.log("Image received from", participantInfo.identity);
+      });
     })().catch(async (err) => {
         console.error(err);
         localStorage.removeItem("lk_token_b");

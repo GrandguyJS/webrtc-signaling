@@ -180,45 +180,27 @@ async def main():
     await room.connect(SERVER_URL, get_token())
 
     @room.local_participant.register_rpc_method("image")
-    async def rpc_image(data: RpcInvocationData):
+    async def rpc_image(data: rtc.RpcInvocationData):
+        caller = data.caller_identity
         img_path = "image.jpg"
 
-        try:
-            proc = subprocess.run(
-                [
-                    "rpicam-still",
-                    "--immediate",
-                    "--nopreview",
-                    "--width", 
-                    "640", 
-                    "--height", 
-                    "480",
-                    "-o", img_path,
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
+        # capture image
+        subprocess.run(
+            ["rpicam-still", "--immediate", "--nopreview", "-o", img_path],
+            check=True,
+        )
 
-            if proc.returncode != 0:
-                return json.dumps({
-                    "ok": False,
-                    "error": proc.stderr.decode(errors="ignore"),
-                })
+        # send image file
+        info = await room.local_participant.send_file(
+            file_path=img_path,
+            destination_identities=[caller],
+            topic="image",
+        )
 
-            with open(img_path, "rb") as f:
-                img_b64 = base64.b64encode(f.read()).decode("ascii")
-
-            return json.dumps({
-                "ok": True,
-                "format": "jpeg",
-                "image_base64": img_b64,
-            })
-
-        except Exception as e:
-            return json.dumps({
-                "ok": False,
-                "error": str(e),
-            })
+        return {
+            "ok": True,
+            "stream_id": info.stream_id,
+        }
 
     # video
     if ENABLE_CAMERA:
