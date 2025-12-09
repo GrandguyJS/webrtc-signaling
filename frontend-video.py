@@ -180,23 +180,25 @@ async def main():
 
     @room.local_participant.register_rpc_method("image")
     async def rpc_image(_):
-        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-            img_path = f.name
+        img_path = os.path.expanduser("~/Desktop/image.jpg")
 
         try:
-            subprocess.run(
+            proc = subprocess.run(
                 [
                     "rpicam-still",
-                    "-n",
-                    "-t", "100",
-                    "--width", "1280",
-                    "--height", "720",
+                    "--immediate",
+                    "--nopreview",
                     "-o", img_path,
                 ],
-                check=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
+
+            if proc.returncode != 0:
+                return {
+                    "error": "rpicam_failed",
+                    "stderr": proc.stderr.decode(errors="ignore")
+                }
 
             with open(img_path, "rb") as f:
                 img_b64 = base64.b64encode(f.read()).decode("ascii")
@@ -206,9 +208,8 @@ async def main():
                 "image_base64": img_b64,
             }
 
-        finally:
-            if os.path.exists(img_path):
-                os.unlink(img_path)
+        except Exception as e:
+            return {"error": str(e)}
 
     # video
     if ENABLE_CAMERA:
