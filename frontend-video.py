@@ -7,6 +7,10 @@ import asyncio
 from livekit import rtc
 import sounddevice as sd
 
+import base64
+import tempfile
+import subprocess
+
 SERVER_URL = "wss://live-chat.duckdns.org"
 TOKEN_URL = "https://live-chat.duckdns.org/token"
 PASSWORD = os.getenv("PASSWORD")
@@ -171,6 +175,38 @@ async def main():
     @room.on("track_unsubscribed")
     def on_track_unsubscribed(track, pub, participant):
         audio_handler.stop()
+
+    @room.local_participant.register_rpc_method("image")
+    async def rpc_image(_):
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            img_path = f.name
+
+        try:
+            subprocess.run(
+                [
+                    "rpicam-still",
+                    "-n",
+                    "-t", "100",
+                    "--width", "1280",
+                    "--height", "720",
+                    "-o", img_path,
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
+            with open(img_path, "rb") as f:
+                img_b64 = base64.b64encode(f.read()).decode("ascii")
+
+            return {
+                "format": "jpeg",
+                "image_base64": img_b64,
+            }
+
+        finally:
+            if os.path.exists(img_path):
+                os.unlink(img_path)
 
     await room.connect(SERVER_URL, get_token())
 

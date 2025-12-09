@@ -13,6 +13,8 @@
   <br>
   <label><input type="checkbox" id="toggleAudio" checked> Audio</label>
   <br>
+  <button id="snap">📸 Take image</button>
+  <img id="img" style="max-width:100%; display:block; margin-top:10px;">
   <script>
     let token;
     async function getToken() {
@@ -54,6 +56,17 @@
       document.getElementById("toggleAudio").addEventListener("change", async (e) => {
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
       });
+
+      document.getElementById("snap").onclick = async () => {
+        const res = await room.localParticipant.performRpc({
+          destinationIdentity: "usera",
+          method: "image",
+          payload: {}
+        });
+
+        const img = document.getElementById("img");
+        img.src = `data:image/jpeg;base64,${res.image_base64}`;
+      };
     })().catch(async (err) => {
         console.error(err);
         localStorage.removeItem("lk_token_b");
