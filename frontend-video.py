@@ -182,7 +182,7 @@ async def main():
     @room.local_participant.register_rpc_method("image")
     async def rpc_image(data: rtc.RpcInvocationData):
         caller = data.caller_identity
-        img_path = "image.jpg"
+        img_path = "/Users/grandguymc/Documents/Projects/Code/webrtc-signaling/image.jpg"
 
         # capture image
         subprocess.run(
@@ -197,10 +197,10 @@ async def main():
             topic="image",
         )
 
-        return {
+        return json.dumps({
             "ok": True,
             "stream_id": info.stream_id,
-        }
+        })
 
     # video
     if ENABLE_CAMERA:

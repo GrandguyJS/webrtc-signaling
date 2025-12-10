@@ -59,22 +59,15 @@
 
       document.getElementById("snap").onclick = async () => {
         await room.localParticipant.performRpc({
-          destinationIdentity: "YOUR_PI_IDENTITY",
+          destinationIdentity: "usera",
           method: "image",
           payload: {},
         });
       };
 
-      room.registerByteStreamHandler("image", async (reader, participantInfo) => {
-        const info = reader.info;
-
-        const chunks = await reader.readAll();
-        const blob = new Blob(chunks, { type: info.mimeType || "image/jpeg" });
-        const url = URL.createObjectURL(blob);
-
-        const img = document.getElementById("img");
-        img.src = url;
-
+      room.registerFileStreamHandler("image", async (file, participantInfo) => {
+        const url = URL.createObjectURL(file);
+        document.getElementById("img").src = url;
         console.log("Image received from", participantInfo.identity);
       });
     })().catch(async (err) => {
