@@ -8,6 +8,7 @@ from livekit import rtc
 import sounddevice as sd
 
 import subprocess
+import cv2
 import json
 
 SERVER_URL = "wss://live-chat.duckdns.org"
@@ -88,7 +89,6 @@ class RemoteAudioHandler:
             self.out = None
         self.stream = None
 
-
 async def publish_video(room: rtc.Room, cam_index=0, width=1280, height=720, fps=30):
     # Create encoded video track from GStreamer
     source = rtc.VideoSource(width, height)
@@ -158,6 +158,28 @@ async def publish_video(room: rtc.Room, cam_index=0, width=1280, height=720, fps
         del pipeline
         print("Pipeline stopped cleanly.")
 
+async def capture_and_send(room, caller):
+    img_path = "image.jpg"
+
+    proc = await asyncio.create_subprocess_exec(
+        "rpicam-still",
+        "-o", img_path,
+        "-n",
+        "--immediate",
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    await proc.wait()
+
+    if proc.returncode != 0:
+        return
+
+    await room.local_participant.send_file(
+        file_path=img_path,
+        destination_identities=[caller],
+        topic="image",
+    )
+
 async def main():
     loop = asyncio.get_running_loop()
     room = rtc.Room()
@@ -180,19 +202,12 @@ async def main():
     @room.local_participant.register_rpc_method("image")
     async def rpc_image(data: rtc.RpcInvocationData):
         caller = data.caller_identity
-        img_path = "image.jpg"
-
-        # send image file
-        info = await room.local_participant.send_file(
-            file_path=img_path,
-            destination_identities=[caller],
-            topic="image",
+        asyncio.create_task(
+            capture_and_send(room, caller)
         )
 
-        return json.dumps({
-            "ok": True,
-            "stream_id": str(info.stream_id),
-        })
+        # return immediately to avoid RPC timeout
+        return json.dumps({"ok": True})
 
     # video
     if ENABLE_CAMERA:
