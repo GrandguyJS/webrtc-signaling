@@ -8,6 +8,8 @@ from livekit import rtc
 import sounddevice as sd
 
 import json
+import subprocess
+import glob
 
 SERVER_URL = "wss://live-chat.duckdns.org"
 TOKEN_URL = "https://live-chat.duckdns.org/token"
@@ -100,8 +102,14 @@ async def main():
     @room.local_participant.register_rpc_method("image")
     async def rpc_image(data: rtc.RpcInvocationData):
         caller = data.caller_identity
+
+        subprocess.run(["pkill", "-USR1", "rpicam-still"], check=True)
+        await asyncio.sleep(0.5)  # allow camera to write file
+
+        files = glob.glob(f"tmp/*.jpg")
+         
         await room.local_participant.send_file(
-            file_path="image.jpg",
+            file_path=max(files, key=os.path.getmtime),
             destination_identities=[caller],
             topic="image",
         )
