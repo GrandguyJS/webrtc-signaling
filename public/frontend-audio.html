@@ -70,7 +70,7 @@
         const filename = data?.payload?.name;
         const a = document.createElement("a");
 
-        a.href = "/latest-file?" + Date.now();
+        a.href = "/latest?" + Date.now();
         a.download = filename || "download";
 
         document.body.appendChild(a);
