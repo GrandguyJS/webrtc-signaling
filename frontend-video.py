@@ -37,12 +37,15 @@ async def publish_image(room, caller):
         if files:
             break
         await asyncio.sleep(1)
+
+    file_name = max(files, key=os.path.getmtime)
+    print("Sending " + file_name)
     
     if not files:
         return json.dumps({"ok": False, "error": "no image captured"})
         
     await room.local_participant.send_file(
-        file_path=max(files, key=os.path.getmtime),
+        file_path=file_name,
         destination_identities=[caller],
         topic="image",
     )
