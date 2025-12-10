@@ -184,6 +184,12 @@ async def main():
         caller = data.caller_identity
         img_path = "image.jpg"
 
+        # capture image
+        subprocess.run(
+            ["rpicam-still", "--immediate", "--nopreview", "-o", img_path],
+            check=True,
+        )
+
         # send image file
         info = await room.local_participant.send_file(
             file_path=img_path,
