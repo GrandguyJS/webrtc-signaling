@@ -186,7 +186,7 @@ async def main():
 
         # capture image
         subprocess.run(
-            ["rpicam-still", "--immediate", "--nopreview", "-o", img_path],
+            ["rpicam-still", "--nopreview", "-o", img_path],
             check=True,
         )
 
@@ -197,10 +197,7 @@ async def main():
             topic="image",
         )
 
-        return json.dumps({
-            "ok": True,
-            "stream_id": info.stream_id,
-        })
+        return { "ok": True, "stream_id": info.stream_id }
 
     # video
     if ENABLE_CAMERA:
