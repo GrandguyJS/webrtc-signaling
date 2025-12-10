@@ -7,7 +7,6 @@ import asyncio
 from livekit import rtc
 import sounddevice as sd
 
-import subprocess
 import json
 from picamzero import Camera
 
@@ -18,6 +17,7 @@ IDENTITY = "usera"
 CAMERA = 0
 
 cam = Camera()
+cam_lock = asyncio.Lock()
 
 def get_token():
     params = {
@@ -104,7 +104,8 @@ async def main():
     @room.local_participant.register_rpc_method("image")
     async def rpc_image(data: rtc.RpcInvocationData):
         caller = data.caller_identity
-        cam.take_photo(f"image.jpg")
+        async with cam_lock:
+            await loop.run_in_executor(None, cam.take_photo("image.jpg"))
         await room.local_participant.send_file(
             file_path="image.jpg",
             destination_identities=[caller],
