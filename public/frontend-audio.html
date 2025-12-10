@@ -66,9 +66,6 @@
         // Option 2: Get the entire file after the stream completes.
         const result = new Blob(await reader.readAll(), { type: info.mimeType });
 
-        const chunks = await reader.readAll();
-        const blob = new Blob(chunks, { type: info.mimeType });
-
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "file.jpg"; // or dynamic name
