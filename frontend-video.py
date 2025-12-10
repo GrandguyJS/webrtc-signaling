@@ -50,6 +50,8 @@ async def publish_image(room, caller):
         topic="image",
     )
     
+    for file in files:
+        os.remove(file)
 
 async def main():
     room = rtc.Room()
