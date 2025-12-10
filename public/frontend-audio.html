@@ -13,8 +13,7 @@
   <br>
   <label><input type="checkbox" id="toggleAudio" checked> Audio</label>
   <br>
-  <button id="snap">📸 Take image</button>
-  <img id="img" style="max-width:100%; display:block; margin-top:10px;">
+  <button id="snap">Download frame</button>
   <script>
     let token;
     async function getToken() {
@@ -58,23 +57,26 @@
       });
 
       room.registerByteStreamHandler("image", async (reader, participantInfo) => {
-        const chunks = [];
+        const mime = reader.info.mimeType ?? "image/jpeg";
+
+        const handle = await window.showSaveFilePicker({
+          suggestedName: "image.jpg",
+          types: [{
+            description: "Image",
+            accept: { [mime]: [".jpg", ".jpeg"] }
+          }]
+        });
+
+        const writable = await handle.createWritable();
 
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
-          chunks.push(value);
+          await writable.write(value); // writes immediately
         }
 
-        const blob = new Blob(chunks, {
-          type: reader.info.mimeType ?? "image/jpeg",
-        });
-        
-        const old = img.src;
-        img.src = URL.createObjectURL(blob);
-        if (old) URL.revokeObjectURL(old);
-
-        console.log(`Image received from ${participantInfo.identity}`);
+        await writable.close();
+        console.log(`Image saved from ${participantInfo.identity}`);
       });
 
       document.getElementById("snap").onclick = async () => {
