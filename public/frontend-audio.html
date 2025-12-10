@@ -65,10 +65,17 @@
         });
       };
 
-      room.registerFileStreamHandler("image", async (file, participantInfo) => {
-        const url = URL.createObjectURL(file);
-        document.getElementById("img").src = url;
-        console.log("Image received from", participantInfo.identity);
+      room.registerByteStreamHandler('image', async (reader, participantInfo) => {
+        const info = reader.info;
+
+        const blob = new Blob(await reader.readAll(), {
+          type: info.mimeType || "image/jpeg",
+        });
+
+        const img = document.getElementById("img");
+        img.src = URL.createObjectURL(blob);
+
+        console.log(`Image received from ${participantInfo.identity}`);
       });
     })().catch(async (err) => {
         console.error(err);
