@@ -81,19 +81,22 @@ class RemoteAudioHandler:
         self.stream = None
 
 async def publish_image(room, caller):
-    subprocess.run(["pkill", "-USR1", "rpicam-still"], check=True)
+    subprocess.run(["pkill", "-USR1", "rpicam-still"])
     for _ in range(10):
         files = glob.glob("tmp/*.jpg")
         if files:
             break
         await asyncio.sleep(1)
+    
+    if not files:
+        return json.dumps({"ok": False, "error": "no image captured"})
         
     await room.local_participant.send_file(
         file_path=max(files, key=os.path.getmtime),
         destination_identities=[caller],
         topic="image",
-        mime_type="image/jpeg",
     )
+    
 
 async def main():
     loop = asyncio.get_running_loop()

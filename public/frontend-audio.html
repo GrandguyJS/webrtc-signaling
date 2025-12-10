@@ -69,10 +69,10 @@
         const blob = new Blob(chunks, {
           type: reader.info.mimeType ?? "image/jpeg",
         });
-
-        const img = document.getElementById("img");
-        URL.revokeObjectURL(img.src);
+        
+        const old = img.src;
         img.src = URL.createObjectURL(blob);
+        if (old) URL.revokeObjectURL(old);
 
         console.log(`Image received from ${participantInfo.identity}`);
       });
