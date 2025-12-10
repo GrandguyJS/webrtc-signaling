@@ -78,6 +78,7 @@ async def main():
     
     try:
         await player.start()
+        print("Starting playback!")
         while True:
             await asyncio.sleep(1)
     except KeyboardInterrupt:
