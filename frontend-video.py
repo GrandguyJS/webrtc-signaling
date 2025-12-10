@@ -31,30 +31,60 @@ def get_token():
     return data["token"]
 
 async def publish_image(room, caller):
-    subprocess.run(["pkill", "-USR1", "rpicam-still"])
-    for _ in range(10):
-        files = glob.glob("tmp/*.jpg")
-        if files:
-            break
-        await asyncio.sleep(1)
+    file_name = f"tmp/image.jpg"
 
-    file_name = max(files, key=os.path.getmtime)
+    subprocess.run(
+        [
+            "rpicam-still",
+            "-o", file_name,
+        ],
+        check=True,
+    )
+
     print("Sending " + file_name)
     
-    if not files:
-        return json.dumps({"ok": False, "error": "no image captured"})
-        
     requests.post(
-        API + "/upload-image",
+        API + "/upload",
         files={"file": open(file_name, "rb")},
     )
-    
-    for file in files:
-        os.remove(file)
+
+    os.remove(file_name)
 
     await room.local_participant.perform_rpc(
         destination_identity=caller,
-        method="image-done",
+        method="upload-done",
+        payload=json.dumps({"ok": True}),
+    )
+
+async def publish_video(room, caller):
+    file_name = f"tmp/video.mp4"
+
+    subprocess.run(
+        [
+            "rpicam-vid",
+            "-t", "10000",                
+            "--width", "1280",
+            "--height", "720",
+            "--framerate", "25",
+            "--bitrate", "4000000",
+            "--nopreview",
+            "-o", file_name,
+        ],
+        check=True,
+    )
+
+    print("Sending " + file_name)
+
+    requests.post(
+        API + "/upload",
+        files={"file": open(file_name, "rb")},
+    )
+
+    os.remove(file_name)
+
+    await room.local_participant.perform_rpc(
+        destination_identity=caller,
+        method="upload-done",
         payload=json.dumps({"ok": True}),
     )
 
@@ -83,6 +113,14 @@ async def main():
         caller = data.caller_identity
 
         asyncio.create_task(publish_image(room, caller))
+        # return immediately to avoid RPC timeout
+        return json.dumps({"ok": True})
+    
+    @room.local_participant.register_rpc_method("video")
+    async def rpc_video(data: rtc.RpcInvocationData):
+        caller = data.caller_identity
+
+        asyncio.create_task(publish_video(room, caller))
         # return immediately to avoid RPC timeout
         return json.dumps({"ok": True})
     

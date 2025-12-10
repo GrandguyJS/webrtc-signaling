@@ -4,6 +4,7 @@ from livekit import api
 from flask import Flask, request, jsonify, send_from_directory
 from flask import send_file
 from werkzeug.utils import secure_filename
+from mimetypes import guess_type
 import time
 
 from dotenv import load_dotenv
@@ -37,27 +38,31 @@ def video():
 def audio():
     return send_from_directory("public", "frontend-audio.html")
 
-@app.route("/upload-image", methods=["POST"])
-def upload_image():
+@app.route("/upload", methods=["POST"])
+def upload():
     f = request.files.get("file")
-    if not f:
-        return {"error": "no file"}, 400
+    if not f or not f.filename:
+        return "no file", 400
 
-    name = f"{int(time.time()*1000)}.jpg"
-    path = os.path.join(UPLOAD_DIR, secure_filename(name))
-    f.save(path)
-    return {"ok": True, "name": name}
+    ext = os.path.splitext(f.filename)[1]  # .jpg / .mp4 / etc
+    name = f"{int(time.time()*1000)}{ext}"
 
-@app.route("/latest-image")
-def latest_image():
+    f.save(os.path.join(UPLOAD_DIR, secure_filename(name)))
+    return name, 200
+
+@app.route("/latest")
+def latest():
     files = sorted(
-        [os.path.join(UPLOAD_DIR, f) for f in os.listdir(UPLOAD_DIR)],
+        (os.path.join(UPLOAD_DIR, f) for f in os.listdir(UPLOAD_DIR)),
         key=os.path.getmtime,
         reverse=True,
     )
     if not files:
-        return {"error": "no image"}, 404
-    return send_file(files[0], mimetype="image/jpeg")
+        return "no file", 404
+
+    path = files[0]
+    mime, _ = guess_type(path)
+    return send_file(path, mimetype=mime or "application/octet-stream")
 
 if __name__ == '__main__':  
    app.run(host="0.0.0.0", port=8000)
