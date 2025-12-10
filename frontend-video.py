@@ -5,10 +5,8 @@ load_dotenv("secret.env")
 import requests
 import asyncio
 from livekit import rtc
-from livekit.rtc.rpc import RpcInvocationData
 import sounddevice as sd
 
-import base64
 import subprocess
 import json
 
@@ -184,12 +182,6 @@ async def main():
         caller = data.caller_identity
         img_path = "image.jpg"
 
-        # capture image
-        subprocess.run(
-            ["rpicam-still", "--nopreview", "-o", img_path],
-            check=True,
-        )
-
         # send image file
         info = await room.local_participant.send_file(
             file_path=img_path,
@@ -197,7 +189,10 @@ async def main():
             topic="image",
         )
 
-        return { "ok": True, "stream_id": info.stream_id }
+        return json.dumps({
+            "ok": True,
+            "stream_id": str(info.stream_id),
+        })
 
     # video
     if ENABLE_CAMERA:
