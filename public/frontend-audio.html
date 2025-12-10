@@ -59,18 +59,22 @@
       room.registerByteStreamHandler('image', async (reader, participantInfo) => {
         const info = reader.info;
 
-        reader.onProgress = (progress) => {
+        reader.onProgress = (progress) => { 
           console.log(`"progress ${progress ? (progress * 100).toFixed(0) : 'undefined'}%`);
         };
 
         // Option 2: Get the entire file after the stream completes.
-        const result = new Blob(await reader.readAll(), { type: info.mimeType });
+        const chunks = await reader.readAll();
+        const blob = new Blob(chunks, { type: info.mimeType });
 
+        const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "file.jpg"; // or dynamic name
+        a.href = url;
+        a.download = "image.jpg"; // set name
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(a.href);
+        a.remove();
+        URL.revokeObjectURL(url);
 
         console.log(
           `File "${info.name}" received from ${participantInfo.identity}\n` +
