@@ -162,16 +162,13 @@ async def capture_and_send(room, caller):
 
     proc = await asyncio.create_subprocess_exec(
         "rpicam-still",
-        "-o", img_path,
-        "-n",
         "--immediate",
+        "--nopreview",
+        "-o", img_path,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
     await proc.wait()
-
-    if proc.returncode != 0:
-        return
 
     await room.local_participant.send_file(
         file_path=img_path,
