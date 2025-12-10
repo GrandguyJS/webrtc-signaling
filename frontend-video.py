@@ -8,7 +8,6 @@ from livekit import rtc
 import sounddevice as sd
 
 import subprocess
-import cv2
 import json
 
 SERVER_URL = "wss://live-chat.duckdns.org"
