@@ -182,13 +182,7 @@ async def main():
     @room.local_participant.register_rpc_method("image")
     async def rpc_image(data: rtc.RpcInvocationData):
         caller = data.caller_identity
-        img_path = "/Users/grandguymc/Documents/Projects/Code/webrtc-signaling/image.jpg"
-
-        # capture image
-        subprocess.run(
-            ["rpicam-still", "--immediate", "--nopreview", "-o", img_path],
-            check=True,
-        )
+        img_path = "image.jpg"
 
         # send image file
         info = await room.local_participant.send_file(
