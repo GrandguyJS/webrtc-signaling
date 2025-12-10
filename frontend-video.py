@@ -33,24 +33,22 @@ def get_token():
 async def publish_image(room, caller):
     file_name = "tmp/image.jpg"
 
-    # Capture image (blocking!)
     await asyncio.to_thread(
-        subprocess.run,
-        ["rpicam-still", "--immediate", "-o", file_name],
-        {"check": True}
+        lambda: subprocess.run(
+            ["rpicam-still", "--immediate", "-o", file_name],
+            check=True,
+        )
     )
 
-    # Upload (blocking!)
     await asyncio.to_thread(
-        requests.post,
-        API + "/upload",
-        files={"file": open(file_name, "rb")},
+        lambda: requests.post(
+            API + "/upload",
+            files={"file": open(file_name, "rb")},
+        )
     )
 
-    # Delete file (blocking)
     await asyncio.to_thread(os.remove, file_name)
 
-    # Send async RPC
     await room.local_participant.perform_rpc(
         destination_identity=caller,
         method="upload-done",
