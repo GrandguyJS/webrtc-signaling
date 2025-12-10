@@ -14,7 +14,7 @@ import subprocess
 import glob
 
 SERVER_URL = "wss://live-chat.duckdns.org"
-TOKEN_URL = "https://live-chat.duckdns.org/token"
+API = "https://live-chat.duckdns.org"
 PASSWORD = os.getenv("PASSWORD")
 IDENTITY = "usera"
 CAMERA = 0
@@ -24,7 +24,7 @@ def get_token():
         "pwd": PASSWORD,
         "identity": IDENTITY
     }
-    r = requests.get(TOKEN_URL, params=params)
+    r = requests.get(API + "/token", params=params)
     data = r.json()
     if "error" in data:
         raise Exception("Wrong password or server rejected authentication")
@@ -44,14 +44,20 @@ async def publish_image(room, caller):
     if not files:
         return json.dumps({"ok": False, "error": "no image captured"})
         
-    await room.local_participant.send_file(
-        file_path=file_name,
-        destination_identities=[caller],
-        topic="image",
+    requests.post(
+        API + "/upload-image",
+        files={"file": open(file_name, "rb")},
+        timeout=5,
     )
     
     for file in files:
         os.remove(file)
+
+    await room.local_participant.perform_rpc(
+        destination_identity=caller,
+        method="image-done",
+        payload=json.dumps({"ok": True}),
+    )
 
 async def main():
     room = rtc.Room()

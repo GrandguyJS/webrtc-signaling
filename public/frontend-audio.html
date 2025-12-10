@@ -56,35 +56,6 @@
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
       });
 
-      room.registerByteStreamHandler('image', async (reader, participantInfo) => {
-        const info = reader.info;
-
-        reader.onProgress = (progress) => { 
-          console.log(`"progress ${progress ? (progress * 100).toFixed(0) : 'undefined'}%`);
-        };
-
-        // Option 2: Get the entire file after the stream completes.
-        const chunks = await reader.readAll();
-        const blob = new Blob(chunks, { type: info.mimeType });
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "image.jpg"; // set name
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-
-        console.log(
-          `File "${info.name}" received from ${participantInfo.identity}\n` +
-          `  Topic: ${info.topic}\n` +
-          `  Timestamp: ${info.timestamp}\n` +
-          `  ID: ${info.id}\n` +
-          `  Size: ${info.size}` // Optional, only available if the stream was sent with `sendFile`
-        );
-      });
-
       document.getElementById("snap").onclick = async () => {
         await room.localParticipant.performRpc({
           destinationIdentity: "usera",
@@ -92,6 +63,16 @@
           payload: "{}",
         });
       };
+
+      room.registerRpcMethod("image-done", async (data) => {
+        const a = document.createElement("a");
+        a.href = "/latest-image?" + Date.now();
+        a.download = "image.jpg";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return {"ok": true};
+      });
     })().catch(async (err) => {
         console.error(err);
         localStorage.removeItem("lk_token_b");
