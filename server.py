@@ -2,9 +2,8 @@
 import os
 from livekit import api
 from flask import Flask, request, jsonify, send_from_directory
-from flask import send_file
+from flask import send_file, abort
 from werkzeug.utils import secure_filename
-from mimetypes import guess_type
 import time
 
 from dotenv import load_dotenv
@@ -52,17 +51,15 @@ def upload():
 
 @app.route("/latest")
 def latest():
-    files = sorted(
-        (os.path.join(UPLOAD_DIR, f) for f in os.listdir(UPLOAD_DIR)),
-        key=os.path.getmtime,
-        reverse=True,
-    )
-    if not files:
-        return "no file", 404
+    try:
+        latest_file = max(
+            (os.path.join(UPLOAD_DIR, f) for f in os.listdir(UPLOAD_DIR)),
+            key=os.path.getmtime,
+        )
+    except (ValueError, FileNotFoundError):
+        abort(404)
 
-    path = files[0]
-    mime, _ = guess_type(path)
-    return send_file(path, mimetype=mime or "application/octet-stream")
+    return send_file(latest_file, as_attachment=False)
 
 if __name__ == '__main__':  
    app.run(host="0.0.0.0", port=8000)
