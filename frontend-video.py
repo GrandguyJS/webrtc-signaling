@@ -85,6 +85,7 @@ async def publish_image(room, caller):
     await asyncio.sleep(0.5)  # allow camera to write file
 
     files = glob.glob(f"tmp/*.jpg")
+    print(files)
         
     await room.local_participant.send_file(
         file_path=max(files, key=os.path.getmtime),
