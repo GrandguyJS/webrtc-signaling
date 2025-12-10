@@ -56,27 +56,32 @@
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
       });
 
-      room.registerByteStreamHandler("image", async (reader, participantInfo) => {
-        const mime = reader.info.mimeType ?? "image/jpeg";
+      room.registerByteStreamHandler('image', async (reader, participantInfo) => {
+        const info = reader.info;
 
-        const handle = await window.showSaveFilePicker({
-          suggestedName: "image.jpg",
-          types: [{
-            description: "Image",
-            accept: { [mime]: [".jpg", ".jpeg"] }
-          }]
-        });
+        reader.onProgress = (progress) => {
+          console.log(`"progress ${progress ? (progress * 100).toFixed(0) : 'undefined'}%`);
+        };
 
-        const writable = await handle.createWritable();
+        // Option 2: Get the entire file after the stream completes.
+        const result = new Blob(await reader.readAll(), { type: info.mimeType });
 
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          await writable.write(value); // writes immediately
-        }
+        const chunks = await reader.readAll();
+        const blob = new Blob(chunks, { type: info.mimeType });
 
-        await writable.close();
-        console.log(`Image saved from ${participantInfo.identity}`);
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "file.jpg"; // or dynamic name
+        a.click();
+        URL.revokeObjectURL(a.href);
+
+        console.log(
+          `File "${info.name}" received from ${participantInfo.identity}\n` +
+          `  Topic: ${info.topic}\n` +
+          `  Timestamp: ${info.timestamp}\n` +
+          `  ID: ${info.id}\n` +
+          `  Size: ${info.size}` // Optional, only available if the stream was sent with `sendFile`
+        );
       });
 
       document.getElementById("snap").onclick = async () => {
