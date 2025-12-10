@@ -58,7 +58,7 @@ def latest():
         )
     except (ValueError, FileNotFoundError):
         abort(404)
-
+    print(latest_file)
     return send_file(latest_file, as_attachment=False)
 
 if __name__ == '__main__':  
