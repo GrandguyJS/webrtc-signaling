@@ -82,15 +82,17 @@ class RemoteAudioHandler:
 
 async def publish_image(room, caller):
     subprocess.run(["pkill", "-USR1", "rpicam-still"], check=True)
-    await asyncio.sleep(0.5)  # allow camera to write file
-
-    files = glob.glob(f"tmp/*.jpg")
-    print(files)
+    for _ in range(10):
+        files = glob.glob("tmp/*.jpg")
+        if files:
+            break
+        await asyncio.sleep(1)
         
     await room.local_participant.send_file(
         file_path=max(files, key=os.path.getmtime),
         destination_identities=[caller],
         topic="image",
+        mime_type="image/jpeg",
     )
 
 async def main():

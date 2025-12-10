@@ -57,26 +57,33 @@
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
       });
 
-      document.getElementById("snap").onclick = async () => {
-        await room.localParticipant.performRpc({
-          destinationIdentity: "usera",
-          method: "image",
-          payload: {},
-        });
-      };
+      room.registerByteStreamHandler("image", async (reader, participantInfo) => {
+        const chunks = [];
 
-      room.registerByteStreamHandler('image', async (reader, participantInfo) => {
-        const info = reader.info;
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
 
-        const blob = new Blob(await reader.readAll(), {
-          type: info.mimeType || "image/jpeg",
+        const blob = new Blob(chunks, {
+          type: reader.info.mimeType ?? "image/jpeg",
         });
 
         const img = document.getElementById("img");
+        URL.revokeObjectURL(img.src);
         img.src = URL.createObjectURL(blob);
 
         console.log(`Image received from ${participantInfo.identity}`);
       });
+
+      document.getElementById("snap").onclick = async () => {
+        await room.localParticipant.performRpc({
+          destinationIdentity: "usera",
+          method: "image",
+          payload: "{}",
+        });
+      };
     })().catch(async (err) => {
         console.error(err);
         localStorage.removeItem("lk_token_b");
