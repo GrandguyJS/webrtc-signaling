@@ -47,7 +47,6 @@ async def publish_image(room, caller):
     requests.post(
         API + "/upload-image",
         files={"file": open(file_name, "rb")},
-        timeout=5,
     )
     
     for file in files:
