@@ -94,12 +94,8 @@ async def main():
     try:
         room = rtc.Room()
 
-        mic = devices.open_input(enable_aec=True)
+        mic = devices.open_input()
         player = devices.open_output()
-
-        if play_audio:
-            await player.start()
-            print("Starting playback!")
 
         @room.on("track_subscribed")
         def on_remote_track(track, pub, participant):
@@ -114,6 +110,10 @@ async def main():
                 asyncio.create_task(player.remove_track(track))
 
         await room.connect(SERVER_URL, get_token())
+
+        if play_audio:
+            await player.start()
+            print("Starting playback!")
 
         if publish_audio:
             audio_source = rtc.AudioSource(48000, 1)
