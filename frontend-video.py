@@ -94,7 +94,6 @@ async def main():
     try:
         room = rtc.Room()
 
-        mic = devices.open_input()
         player = devices.open_output()
 
         @room.on("track_subscribed")
