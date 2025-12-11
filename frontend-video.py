@@ -90,6 +90,16 @@ async def publish_video(room, caller):
 async def main():
     room = rtc.Room()
 
+    # List input devices
+    input_devices = devices.list_input_devices()
+    for device in input_devices:
+        print(f"{device['index']}: {device['name']}")
+
+    # List output devices  
+    output_devices = devices.list_output_devices()
+    for device in output_devices:
+        print(f"{device['index']}: {device['name']}")
+
     player = devices.open_output()
     mic = devices.open_input()
 
