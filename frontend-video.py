@@ -111,10 +111,6 @@ async def main():
 
         await room.connect(SERVER_URL, get_token())
 
-        if play_audio:
-            await player.start()
-            print("Starting playback!")
-
         if publish_audio:
             audio_source = rtc.AudioSource(48000, 1)
             audio_track  = rtc.LocalAudioTrack.create_audio_track("mic", audio_source)
@@ -164,6 +160,9 @@ async def main():
             return json.dumps({"ok": True})
         
         while True:
+            if play_audio:
+                await player.start()
+                print("Starting playback!")
             await asyncio.sleep(1)
     except KeyboardInterrupt:
         pass

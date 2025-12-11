@@ -164,6 +164,9 @@ async def main():
             return json.dumps({"ok": True})
         
         while True:
+            if play_audio:
+                await player.start()
+                print("Starting playback!")
             await asyncio.sleep(1)
     except KeyboardInterrupt:
         pass
