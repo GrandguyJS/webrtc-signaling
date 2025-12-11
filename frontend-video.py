@@ -158,17 +158,17 @@ async def main():
             # return immediately to avoid RPC timeout
             return json.dumps({"ok": True})
         
+        if play_audio:
+            await player.start()
+            print("Starting playback!")
+
         while True:
-            if play_audio:
-                await player.start()
-                print("Starting playback!")
             await asyncio.sleep(1)
     except KeyboardInterrupt:
         pass
     finally:
         print("Shutting down…")
         await player.aclose()
-        await mic.aclose()
         try:
             await room.disconnect()
         except Exception:
