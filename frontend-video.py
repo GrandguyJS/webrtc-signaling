@@ -94,7 +94,7 @@ async def main():
         room = rtc.Room()
 
         player = devices.open_output()
-        mic = devices.open_input()
+        mic = devices.open_input(input_device=1)
 
         @room.on("track_subscribed")
         def on_remote_track(track, pub, participant):
@@ -109,6 +109,11 @@ async def main():
                 asyncio.create_task(player.remove_track(track))
 
         await room.connect(SERVER_URL, get_token())
+
+        if publish_audio:
+            track = rtc.LocalAudioTrack.create_audio_track("microphone", mic.source)
+            await room.local_participant.publish_track(track)
+            print("Publishing audio!")
 
         @room.local_participant.register_rpc_method("image")
         async def rpc_image(data: rtc.RpcInvocationData):
@@ -129,11 +134,6 @@ async def main():
         if play_audio:
             await player.start()
             print("Starting playback!")
-        
-        if publish_audio:
-            track = rtc.LocalAudioTrack.create_audio_track("microphone", mic.source)
-            await room.local_participant.publish_track(track)
-            print("Publishing audio!")
         
         while True:
             await asyncio.sleep(1)

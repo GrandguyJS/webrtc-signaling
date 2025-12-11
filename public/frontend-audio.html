@@ -40,6 +40,7 @@
       const room = new LivekitClient.Room();
 
       room.on(LivekitClient.RoomEvent.TrackSubscribed, (track) => {
+        console.log(track);
         const el = track.attach();
         document.getElementById("remote-container").appendChild(el);
       });
