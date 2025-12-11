@@ -11,13 +11,13 @@ devices = rtc.MediaDevices()
 
 import json
 import subprocess
-import glob
 
 SERVER_URL = "wss://live-chat.duckdns.org"
 API = "https://live-chat.duckdns.org"
 PASSWORD = os.getenv("PASSWORD")
 IDENTITY = "usera"
 CAMERA = 0
+publish_audio = True
 
 def get_token():
     params = {
@@ -91,6 +91,7 @@ async def main():
     room = rtc.Room()
 
     player = devices.open_output()
+    mic = devices.open_input()
 
     # handle remote audio
     @room.on("track_subscribed")
@@ -123,6 +124,10 @@ async def main():
         # return immediately to avoid RPC timeout
         return json.dumps({"ok": True})
     
+    if publish_audio:
+        track = rtc.LocalAudioTrack.create_audio_track("microphone", mic.source)
+        await room.local_participant.publish_track(track)
+    
     try:
         await player.start()
         print("Starting playback!")
@@ -133,6 +138,7 @@ async def main():
 
     print("Shutting down…")
     await player.aclose()
+    await mic.aclose()
     await room.disconnect()
 
 if __name__ == "__main__":
