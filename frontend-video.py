@@ -17,7 +17,9 @@ API = "https://live-chat.duckdns.org"
 PASSWORD = os.getenv("PASSWORD")
 IDENTITY = "usera"
 CAMERA = 0
+
 publish_audio = True
+play_audio = False
 
 def get_token():
     params = {
@@ -88,68 +90,63 @@ async def publish_video(room, caller):
     )
 
 async def main():
-    room = rtc.Room()
-
-    # List input devices
-    input_devices = devices.list_input_devices()
-    for device in input_devices:
-        print(f"{device['index']}: {device['name']}")
-
-    # List output devices  
-    output_devices = devices.list_output_devices()
-    for device in output_devices:
-        print(f"{device['index']}: {device['name']}")
-
-    player = devices.open_output()
-    mic = devices.open_input()
-
-    # handle remote audio
-    @room.on("track_subscribed")
-    def on_remote_track(track, pub, participant):
-        print("Subscribed to remote track")
-        if track.kind == rtc.TrackKind.KIND_AUDIO:
-            asyncio.create_task(player.add_track(track))
-
-    @room.on("track_unsubscribed")
-    def on_track_unsubscribed(track, pub, participant):
-        print("Unsubscribed to remote track")
-        if track.kind == rtc.TrackKind.KIND_AUDIO:
-            asyncio.create_task(player.remove_track(track))
-
-    await room.connect(SERVER_URL, get_token())
-
-    @room.local_participant.register_rpc_method("image")
-    async def rpc_image(data: rtc.RpcInvocationData):
-        caller = data.caller_identity
-
-        asyncio.create_task(publish_image(room, caller))
-        # return immediately to avoid RPC timeout
-        return json.dumps({"ok": True})
-    
-    @room.local_participant.register_rpc_method("video")
-    async def rpc_video(data: rtc.RpcInvocationData):
-        caller = data.caller_identity
-
-        asyncio.create_task(publish_video(room, caller))
-        # return immediately to avoid RPC timeout
-        return json.dumps({"ok": True})
-    
-    if publish_audio:
-        track = rtc.LocalAudioTrack.create_audio_track("microphone", mic.source)
-        await room.local_participant.publish_track(track)
-    
     try:
-        await player.start()
-        print("Starting playback!")
+        room = rtc.Room()
+
+        player = devices.open_output()
+        mic = devices.open_input()
+
+        @room.on("track_subscribed")
+        def on_remote_track(track, pub, participant):
+            print("Subscribed to remote track")
+            if track.kind == rtc.TrackKind.KIND_AUDIO:
+                asyncio.create_task(player.add_track(track))
+
+        @room.on("track_unsubscribed")
+        def on_track_unsubscribed(track, pub, participant):
+            print("Unsubscribed to remote track")
+            if track.kind == rtc.TrackKind.KIND_AUDIO:
+                asyncio.create_task(player.remove_track(track))
+
+        await room.connect(SERVER_URL, get_token())
+
+        @room.local_participant.register_rpc_method("image")
+        async def rpc_image(data: rtc.RpcInvocationData):
+            caller = data.caller_identity
+
+            asyncio.create_task(publish_image(room, caller))
+            # return immediately to avoid RPC timeout
+            return json.dumps({"ok": True})
+        
+        @room.local_participant.register_rpc_method("video")
+        async def rpc_video(data: rtc.RpcInvocationData):
+            caller = data.caller_identity
+
+            asyncio.create_task(publish_video(room, caller))
+            # return immediately to avoid RPC timeout
+            return json.dumps({"ok": True})
+        
+        if play_audio:
+            await player.start()
+            print("Starting playback!")
+        
+        if publish_audio:
+            track = rtc.LocalAudioTrack.create_audio_track("microphone", mic.source)
+            await room.local_participant.publish_track(track)
+            print("Publishing audio!")
+        
         while True:
             await asyncio.sleep(1)
     except KeyboardInterrupt:
         pass
-
-    print("Shutting down…")
-    await player.aclose()
-    await mic.aclose()
-    await room.disconnect()
+    finally:
+        print("Shutting down…")
+        await player.aclose()
+        await mic.aclose()
+        try:
+            await room.disconnect()
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     asyncio.run(main())
