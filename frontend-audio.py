@@ -15,7 +15,7 @@ import subprocess
 SERVER_URL = "wss://live-chat.duckdns.org"
 API = "https://live-chat.duckdns.org"
 PASSWORD = os.getenv("PASSWORD")
-IDENTITY = "usera"
+IDENTITY = "userb"
 CAMERA = 0
 
 publish_audio = True
