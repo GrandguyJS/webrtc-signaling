@@ -159,8 +159,8 @@ async def main():
             return json.dumps({"ok": True})
         
         if play_audio:
-            await player.start()
             print("Starting playback!")
+            await player.start()
 
         while True:
             await asyncio.sleep(1)
