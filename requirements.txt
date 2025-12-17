@@ -1,3 +1,0 @@
-Flask
-livekit-api
-python-dotenv

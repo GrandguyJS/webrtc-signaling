@@ -115,32 +115,32 @@ async def main():
             audio_track  = rtc.LocalAudioTrack.create_audio_track("mic", audio_source)
             await room.local_participant.publish_track(audio_track)
             print("Audio published.")
+            
+            async def stream_audio():
+                with sd.InputStream(
+                    samplerate=48000,
+                    channels=1,
+                    dtype='int16',
+                    blocksize=1024
+                ) as stream:
+                    while True:
+                        data, _ = stream.read(1024)
+                        pcm_bytes = data.tobytes()
 
-            with sd.InputStream(
-                samplerate=48000,
-                channels=1,
-                dtype='int16',
-                blocksize=1024
-            ) as stream:
-                while True:
-                    data, _ = stream.read(1024)
-                    pcm_bytes = data.tobytes()
+                        af = rtc.AudioFrame(
+                            data=pcm_bytes,
+                            sample_rate=48000,
+                            num_channels=1,
+                            samples_per_channel=1024,
+                        )
 
-                    # Build LiveKit frame
-                    af = rtc.AudioFrame(
-                        data=pcm_bytes,
-                        sample_rate=48000,
-                        num_channels=1,
-                        samples_per_channel=1024,
-                    )
-
-                    # Inject into LiveKit audio source
-                    loop.call_soon_threadsafe(
-                        asyncio.create_task,
-                        audio_source.capture_frame(af)
-                    )
-                    # sleep exactly one frame duration
-                    await asyncio.sleep(1024 / 48000)
+                        loop.call_soon_threadsafe(
+                            asyncio.create_task,
+                            audio_source.capture_frame(af)
+                        )
+                        await asyncio.sleep(1024 / 48000)
+            
+            asyncio.create_task(stream_audio())
 
         @room.local_participant.register_rpc_method("image")
         async def rpc_image(data: rtc.RpcInvocationData):
@@ -159,8 +159,8 @@ async def main():
             return json.dumps({"ok": True})
         
         if play_audio:
-            await player.start()
             print("Starting playback!")
+            await player.start()
 
         while True:
             await asyncio.sleep(1)
