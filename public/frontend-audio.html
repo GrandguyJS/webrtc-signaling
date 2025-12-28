@@ -61,6 +61,19 @@
         console.log(data.payload);
         document.getElementById("cost").innerText = `Cost: ${data.payload}$`;
       });
+
+      room.registerRpcMethod("wake_word_detected", async (data) => {
+        console.log(data.payload);
+        document.getElementById("cost").innerText = `Cost: ${data.payload}$`;
+      });
+
+      room.registerRpcMethod("listen_on", async () => {
+        document.getElementById("cost").style.color = "blue";
+      });
+
+      room.registerRpcMethod("listen_off", async () => {
+        document.getElementById("cost").style.color = "black";
+      });
     })().catch(async (err) => {
         console.error(err);
         localStorage.removeItem("lk_token_b");
