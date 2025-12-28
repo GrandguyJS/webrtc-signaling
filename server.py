@@ -29,5 +29,13 @@ def getToken():
         ))
     return jsonify({"token": token.to_jwt()})
 
+@app.route("/video")
+def video():
+    return send_from_directory("public", "frontend-video.html")
+
+@app.route("/audio")
+def audio():
+    return send_from_directory("public", "frontend-audio.html")
+
 if __name__ == '__main__':  
    app.run(host="0.0.0.0", port=8000)
