@@ -9,7 +9,7 @@
   <h2>User B</h2>
   <div id="remote-container"></div>
   <br>
-  <label><input type="checkbox" id="toggleVideo" checked> Video</label>
+  <label><input type="checkbox" id="toggleVideo"> Video</label>
   <br>
   <label><input type="checkbox" id="toggleAudio" checked> Audio</label>
   <br>
@@ -46,7 +46,7 @@
       await room.connect(url, token);
 
       // publish cam+mic
-      await room.localParticipant.setCameraEnabled(true);
+      await room.localParticipant.setCameraEnabled(false);
       await room.localParticipant.setMicrophoneEnabled(true);
 
       document.getElementById("toggleVideo").addEventListener("change", async (e) => {
@@ -58,17 +58,14 @@
       });
 
       room.registerRpcMethod("price_update", async (data) => {
-        console.log(data.payload);
         document.getElementById("cost").innerText = `Cost: ${data.payload}$`;
       });
 
       room.registerRpcMethod("listen_on", async (data) => {
-        console.log("On!");
         document.getElementById("cost").style.color = "blue";
       });
 
       room.registerRpcMethod("listen_off", async (data) => {
-        console.log("Off!");
         document.getElementById("cost").style.color = "black";
       });
     })().catch(async (err) => {
