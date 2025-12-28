@@ -13,9 +13,7 @@
   <br>
   <label><input type="checkbox" id="toggleAudio" checked> Audio</label>
   <br>
-  <button id="image-capture">Download frame</button>
-  <br>
-  <button id="video-capture">Download video</button>
+  <p id="cost">Cost: 0$</p>
   <script>
     let token;
     async function getToken() {
@@ -59,34 +57,9 @@
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
       });
 
-      document.getElementById("image-capture").onclick = async () => {
-        await room.localParticipant.performRpc({
-          destinationIdentity: "usera",
-          method: "image",
-          payload: "{}",
-        });
-      };
-
-      document.getElementById("video-capture").onclick = async () => {
-        await room.localParticipant.performRpc({
-          destinationIdentity: "usera",
-          method: "video",
-          payload: "{}",
-        });
-      };
-
-      room.registerRpcMethod("upload-done", async (data) => {
-        const filename = data?.payload?.name;
-        const a = document.createElement("a");
-
-        a.href = "/latest?" + Date.now();
-        a.download = filename || "download";
-
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-
-        return { ok: true };
+      room.registerRpcMethod("price_update", async (data) => {
+        console.log(data.payload);
+        document.getElementById("cost").innerText = "Cost: ", data.payload, "$";
       });
     })().catch(async (err) => {
         console.error(err);
