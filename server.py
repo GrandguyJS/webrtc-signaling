@@ -29,37 +29,5 @@ def getToken():
         ))
     return jsonify({"token": token.to_jwt()})
 
-@app.route("/video")
-def video():
-    return send_from_directory("public", "frontend-video.html")
-
-@app.route("/audio")
-def audio():
-    return send_from_directory("public", "frontend-audio.html")
-
-@app.route("/upload", methods=["POST"])
-def upload():
-    f = request.files.get("file")
-    if not f or not f.filename:
-        return "no file", 400
-
-    ext = os.path.splitext(f.filename)[1]  # .jpg / .mp4 / etc
-    name = f"{int(time.time()*1000)}{ext}"
-
-    f.save(os.path.join(UPLOAD_DIR, secure_filename(name)))
-    return name, 200
-
-@app.route("/latest")
-def latest():
-    try:
-        latest_file = max(
-            (os.path.join(UPLOAD_DIR, f) for f in os.listdir(UPLOAD_DIR)),
-            key=os.path.getmtime,
-        )
-    except (ValueError, FileNotFoundError):
-        abort(404)
-    print(latest_file)
-    return send_file(latest_file, as_attachment=False)
-
 if __name__ == '__main__':  
    app.run(host="0.0.0.0", port=8000)

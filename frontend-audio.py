@@ -32,63 +32,6 @@ def get_token():
         raise Exception("Wrong password or server rejected authentication")
     return data["token"]
 
-async def publish_image(room, caller):
-    file_name = "tmp/image.jpg"
-
-    await asyncio.to_thread(
-        lambda: subprocess.run(
-            ["rpicam-still", "--immediate", "-o", file_name],
-            check=True,
-        )
-    )
-
-    await asyncio.to_thread(
-        lambda: requests.post(
-            API + "/upload",
-            files={"file": open(file_name, "rb")},
-        )
-    )
-
-    await asyncio.to_thread(os.remove, file_name)
-
-    await room.local_participant.perform_rpc(
-        destination_identity=caller,
-        method="upload-done",
-        payload=json.dumps({"ok": True}),
-    )
-
-async def publish_video(room, caller):
-    file_name = f"tmp/video.mp4"
-
-    subprocess.run(
-        [
-            "rpicam-vid",
-            "-t", "10000",                
-            "--width", "1280",
-            "--height", "720",
-            "--framerate", "25",
-            "--bitrate", "4000000",
-            "--nopreview",
-            "-o", file_name,
-        ],
-        check=True,
-    )
-
-    print("Sending " + file_name)
-
-    requests.post(
-        API + "/upload",
-        files={"file": open(file_name, "rb")},
-    )
-
-    os.remove(file_name)
-
-    await room.local_participant.perform_rpc(
-        destination_identity=caller,
-        method="upload-done",
-        payload=json.dumps({"ok": True}),
-    )
-
 async def main():
     loop = asyncio.get_running_loop()
     try:
@@ -141,22 +84,6 @@ async def main():
                         await asyncio.sleep(1024 / 48000)
             
             asyncio.create_task(stream_audio())
-
-        @room.local_participant.register_rpc_method("image")
-        async def rpc_image(data: rtc.RpcInvocationData):
-            caller = data.caller_identity
-
-            asyncio.create_task(publish_image(room, caller))
-            # return immediately to avoid RPC timeout
-            return json.dumps({"ok": True})
-        
-        @room.local_participant.register_rpc_method("video")
-        async def rpc_video(data: rtc.RpcInvocationData):
-            caller = data.caller_identity
-
-            asyncio.create_task(publish_video(room, caller))
-            # return immediately to avoid RPC timeout
-            return json.dumps({"ok": True})
         
         if play_audio:
             print("Starting playback!")
