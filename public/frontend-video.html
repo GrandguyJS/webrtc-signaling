@@ -13,6 +13,8 @@
   <br>
   <label><input type="checkbox" id="toggleAudio" checked> Audio</label>
   <br>
+  <p id="cost">Cost: 0$</p>
+  <br>
   <script>
     async function getToken() {
       const saved = localStorage.getItem("lk_token_a");
@@ -51,6 +53,18 @@
 
       document.getElementById("toggleAudio").addEventListener("change", async (e) => {
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
+      });
+      
+      room.registerRpcMethod("price_update", async (data) => {
+        document.getElementById("cost").innerText = `Cost: ${data.payload}$`;
+      });
+
+      room.registerRpcMethod("listen_on", async (data) => {
+        document.getElementById("cost").style.color = "blue";
+      });
+
+      room.registerRpcMethod("listen_off", async (data) => {
+        document.getElementById("cost").style.color = "black";
       });
     })().catch((err) => {
         console.error(err);
