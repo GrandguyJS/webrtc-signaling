@@ -59,7 +59,7 @@
 
       room.registerRpcMethod("price_update", async (data) => {
         console.log(data.payload);
-        document.getElementById("cost").innerText = "Cost: ", data.payload, "$";
+        document.getElementById("cost").innerText = `Cost: ${data.payload}$`;
       });
     })().catch(async (err) => {
         console.error(err);
