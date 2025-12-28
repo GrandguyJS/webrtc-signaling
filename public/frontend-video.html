@@ -57,14 +57,17 @@
       
       room.registerRpcMethod("price_update", async (data) => {
         document.getElementById("cost").innerText = `Cost: ${data.payload}$`;
+        return { ok: true };
       });
 
       room.registerRpcMethod("listen_on", async (data) => {
         document.getElementById("cost").style.color = "blue";
+        return { ok: true };
       });
 
       room.registerRpcMethod("listen_off", async (data) => {
         document.getElementById("cost").style.color = "black";
+        return { ok: true };
       });
     })().catch((err) => {
         console.error(err);
