@@ -6,7 +6,7 @@
   <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 </head>
 <body>
-  <h2>LiveKit – User A</h2>
+  <h2>User A - <button id="start">Start</button></h2>
   <div id="remote-container"></div>
   <br>
   <label><input type="checkbox" id="toggleVideo" checked> Video</label>
@@ -31,49 +31,57 @@
       localStorage.setItem("lk_token_a", data.token);
       return data.token;
     }
-    (async () => {
-      const url = "wss://live-chat.duckdns.org";  // same server
-      const token = await getToken();
-      
-      const room = new LivekitClient.Room();
+    async function start() {
+      try {
+        const url = "wss://live-chat.duckdns.org";  // same server
+        const token = await getToken();
+        
+        const room = new LivekitClient.Room();
 
-      room.on(LivekitClient.RoomEvent.TrackSubscribed, (track) => {
-        const el = track.attach();
-        document.getElementById("remote-container").appendChild(el);
-      });
+        room.on(LivekitClient.RoomEvent.TrackSubscribed, (track) => {
+          const el = track.attach();
+          document.getElementById("remote-container").appendChild(el);
+        });
 
-      await room.connect(url, token);
+        await room.connect(url, token);
 
-      await room.localParticipant.setCameraEnabled(true);
-      await room.localParticipant.setMicrophoneEnabled(true);
+        await room.localParticipant.setCameraEnabled(true);
+        await room.localParticipant.setMicrophoneEnabled(true);
 
-      document.getElementById("toggleVideo").addEventListener("change", async (e) => {
-        room.localParticipant.setCameraEnabled(e.target.checked);
-      });
+        document.getElementById("toggleVideo").addEventListener("change", async (e) => {
+          room.localParticipant.setCameraEnabled(e.target.checked);
+        });
 
-      document.getElementById("toggleAudio").addEventListener("change", async (e) => {
-        room.localParticipant.setMicrophoneEnabled(e.target.checked);
-      });
-      
-      room.registerRpcMethod("price_update", async (data) => {
-        document.getElementById("cost").innerText = `Cost: ${data.payload}$`;
-        return { ok: true };
-      });
+        document.getElementById("toggleAudio").addEventListener("change", async (e) => {
+          room.localParticipant.setMicrophoneEnabled(e.target.checked);
+        });
+        
+        room.registerRpcMethod("price_update", async (data) => {
+          document.getElementById("cost").innerText = `Cost: ${data.payload}$`;
+          return { ok: true };
+        });
 
-      room.registerRpcMethod("listen_on", async (data) => {
-        document.getElementById("cost").style.color = "blue";
-        return { ok: true };
-      });
+        room.registerRpcMethod("listen_on", async (data) => {
+          document.getElementById("cost").style.color = "blue";
+          return { ok: true };
+        });
 
-      room.registerRpcMethod("listen_off", async (data) => {
-        document.getElementById("cost").style.color = "black";
-        return { ok: true };
-      });
-    })().catch((err) => {
+        room.registerRpcMethod("listen_off", async (data) => {
+          document.getElementById("cost").style.color = "black";
+          return { ok: true };
+        });
+      }
+      catch (err) {
         console.error(err);
         localStorage.removeItem("lk_token_a");
       }
-    );
+    }
+    let started = false;
+    document.getElementById("start").addEventListener("click", async () => {
+      if (!started) {
+        await start();
+      }
+    });
   </script>
 </body>
 </html>
