@@ -2,53 +2,51 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>User B</title>
+  <title>LiveKit Chat</title>
   <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 </head>
 <body>
-  <h2>User B</h2>
+  <h2 id="identity">User </h2>
   <div id="remote-container"></div>
   <br>
   <label><input type="checkbox" id="toggleVideo"> Video</label>
   <br>
-  <label><input type="checkbox" id="toggleAudio" checked> Audio</label>
+  <label><input type="checkbox" id="toggleAudio"> Audio</label>
   <br>
   <p id="cost">Cost: 0$</p>
   <br>
   <script>
-    let token;
+    let identity;
     async function getToken() {
-      const saved = localStorage.getItem("lk_token_b");
+      identity = prompt("Enter identity:")
+      document.getElementById("identity").innerText = `User ${identity}`
+
+      const saved = localStorage.getItem(`lk_token_${identity}`);
       if (saved) return saved;
 
       const pwd = prompt("Enter password:");
 
-      const res = await fetch(`https://live-chat.duckdns.org/token?pwd=${encodeURIComponent(pwd)}&identity=userb`);
+      const res = await fetch(`https://live-chat.duckdns.org/token?pwd=${encodeURIComponent(pwd)}&identity=${identity}`);
       const data = await res.json();
       if (data.error) {
         alert("Wrong password!");
         return;
       }
-      localStorage.setItem("lk_token_b", data.token);
+      localStorage.setItem(`lk_token_${identity}`, data.token);
       return data.token;
     }
     (async () => {
       const url = "wss://live-chat.duckdns.org";  // same server
-      token = await getToken();
+      const token = await getToken();
       
       const room = new LivekitClient.Room();
 
       room.on(LivekitClient.RoomEvent.TrackSubscribed, (track) => {
-        console.log(track);
         const el = track.attach();
         document.getElementById("remote-container").appendChild(el);
       });
 
       await room.connect(url, token);
-
-      // publish cam+mic
-      await room.localParticipant.setCameraEnabled(false);
-      await room.localParticipant.setMicrophoneEnabled(true);
 
       document.getElementById("toggleVideo").addEventListener("change", async (e) => {
         room.localParticipant.setCameraEnabled(e.target.checked);
@@ -57,7 +55,7 @@
       document.getElementById("toggleAudio").addEventListener("change", async (e) => {
         room.localParticipant.setMicrophoneEnabled(e.target.checked);
       });
-
+      
       room.registerRpcMethod("price_update", async (data) => {
         document.getElementById("cost").innerText = `Cost: ${data.payload}$`;
         return { ok: true };
@@ -72,9 +70,9 @@
         document.getElementById("cost").style.color = "black";
         return { ok: true };
       });
-    })().catch(async (err) => {
+    })().catch((err) => {
         console.error(err);
-        localStorage.removeItem("lk_token_b");
+        localStorage.removeItem(`lk_token_${identity}`);
       }
     );
   </script>
