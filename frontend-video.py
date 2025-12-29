@@ -9,9 +9,6 @@ import sounddevice as sd
 from livekit import rtc
 devices = rtc.MediaDevices()
 
-import json
-import subprocess
-
 SERVER_URL = "wss://live-chat.duckdns.org"
 API = "https://live-chat.duckdns.org"
 PASSWORD = os.getenv("PASSWORD")
